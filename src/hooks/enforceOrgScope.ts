@@ -20,4 +20,10 @@ export function enforceOrgScope(
   if (query.organization_id == null || query.organization_id === '') {
     throw new Error('Organization ID is required');
   }
+
+  // Every tenant is a separate customer: a present-but-foreign org id is an
+  // access attempt across tenants, not a validation problem.
+  if (query.organization_id !== user.organization_id) {
+    throw new Error('Unauthorized Access');
+  }
 }
