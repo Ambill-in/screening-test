@@ -42,8 +42,10 @@ describe('normalizePayload', () => {
 
 describe('stripManagedFields', () => {
   it('removes managed fields from a single record', () => {
-    const input = { ...basePayment, notes: 'hello' };
-    const result = stripManagedFields(input, [...MANAGED_PAYMENT_FIELDS]) as PaymentRecord;
+    const input: PaymentRecord & { notes: string } = { ...basePayment, notes: 'hello' };
+    const result = stripManagedFields(input, [...MANAGED_PAYMENT_FIELDS]) as PaymentRecord & {
+      notes: string;
+    };
     expect(result.public_key).toBeUndefined();
     expect(result.payment_seq).toBeUndefined();
     expect(result.notes).toBe('hello');

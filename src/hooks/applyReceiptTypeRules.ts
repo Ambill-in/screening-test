@@ -5,8 +5,11 @@
  * Use isTdsReceipt() from ../lib/receiptType.
  */
 
-export function applyReceiptTypeRules(
-  data: Record<string, unknown>
-): Record<string, unknown> {
+interface ReceiptTyped {
+  receipt_type?: unknown;
+  amount_paid?: unknown;
+}
+
+export function applyReceiptTypeRules<T extends ReceiptTyped>(data: T): T {
   return data;
 }

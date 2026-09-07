@@ -4,6 +4,7 @@
   "private": true,
   "description": "Ambill take-home screening test — payment allocation hook pipeline",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },

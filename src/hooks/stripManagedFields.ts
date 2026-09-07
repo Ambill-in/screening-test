@@ -8,7 +8,7 @@
  * Must work for a single object or an array of objects.
  */
 
-export function stripManagedFields<T extends Record<string, unknown>>(
+export function stripManagedFields<T extends object>(
   data: T | T[],
   fields: string[]
 ): T | T[] {
