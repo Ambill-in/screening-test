@@ -1,9 +1,11 @@
 /**
  * Business rules that depend on receipt_type.
  *
- * TODO: implement TDS handling per README (Background: billing rules).
- * Use isTdsReceipt() from ../lib/receiptType.
+ * TDS receipts represent tax deducted at source — not cash in the bank.
+ * amount_paid must be forced to 0 for TDS receipts.
  */
+
+import { isTdsReceipt } from '../lib/receiptType';
 
 interface ReceiptTyped {
   receipt_type?: unknown;
@@ -11,5 +13,8 @@ interface ReceiptTyped {
 }
 
 export function applyReceiptTypeRules<T extends ReceiptTyped>(data: T): T {
+  if (isTdsReceipt(data.receipt_type)) {
+    return { ...data, amount_paid: 0 };
+  }
   return data;
 }
