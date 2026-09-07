@@ -11,5 +11,12 @@ interface ReceiptTyped {
 }
 
 export function applyReceiptTypeRules<T extends ReceiptTyped>(data: T): T {
+  if (data.receipt_type === 'TDS') {
+    return {
+      ...data,
+      amount_paid: 0,
+    };
+  }
+
   return data;
 }

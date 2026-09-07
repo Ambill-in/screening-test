@@ -9,16 +9,18 @@
 
 export function toMoney(value: unknown): number {
   const n = Number(value);
+
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+
+  return Math.round(n * 100) / 100;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return toMoney(a) === toMoney(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toMoney(a) > toMoney(b);
 }
