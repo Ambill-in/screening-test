@@ -12,13 +12,14 @@ export function toMoney(value: unknown): number {
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+  const rounded = Math.round(n * 100) / 100;
+  return rounded === 0 ? 0 : rounded;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return Math.round(a * 100) === Math.round(b * 100);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return Math.round(a * 100) > Math.round(b * 100);
 }

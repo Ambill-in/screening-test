@@ -5,11 +5,17 @@
  * Use isTdsReceipt() from ../lib/receiptType.
  */
 
+import { isTdsReceipt } from '../lib/receiptType';
+
 interface ReceiptTyped {
   receipt_type?: unknown;
   amount_paid?: unknown;
 }
 
 export function applyReceiptTypeRules<T extends ReceiptTyped>(data: T): T {
-  return data;
+  const result = { ...data };
+  if (isTdsReceipt(result.receipt_type)) {
+    result.amount_paid = 0 as any;
+  }
+  return result;
 }
