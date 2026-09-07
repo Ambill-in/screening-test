@@ -79,19 +79,22 @@ Ambill helps finance teams track **accounts receivable** — money customers owe
    git push -u origin jane-doe
    ```
 
-6. On GitHub, open a **Pull Request**:
-   - **base:** `Ambill-in/screening-test` → `main`
-   - **compare:** your fork → `jane-doe`
+6. Open a **pull request from your fork into this repository** (the original `Ambill-in/screening-test`, not your fork):
+
+   - Go to **your fork** on GitHub.
+   - Click **Contribute** → **Open pull request** (or use the banner GitHub shows after you push).
+   - Set **base repository** to `Ambill-in/screening-test` and **base** to `main`.
+   - Set **head repository** to **your fork** and **compare** to your branch (e.g. `jane-doe`).
+   - Click **Create pull request**.
+
+   You are proposing changes from your fork’s branch into our `main`. That pull request is your submission.
+
 7. Fill in the PR template (name, email, written answers, checklist).
 8. Wait for CI on the PR to turn green.
 
 **Your submission is the pull request.** We review open PRs — you do not need to email anyone.
 
 If you were given a Google Form link in your invitation email, submit it once after opening your PR (name, email, GitHub username).
-
-### Why fork + PR (not a branch on our repo)?
-
-We do not give candidates write access to `main`. A fork keeps our `main` clean and unchanged; the PR shows your diff against our `main` automatically.
 
 ---
 
