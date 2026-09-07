@@ -14,7 +14,7 @@
  *   - validateAllocationTotal: ensure allocation rows sum to payment amount
  *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
  */
-
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
@@ -39,7 +39,7 @@ export function validateAllocationTotal(
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -63,12 +63,13 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    const merged = mergePatch(existing, payload);
+    return applyReceiptTypeRules(merged);
   }
 
   enforceOrgScope(user, query);
 
-  return payload as PaymentRecord;
+  return applyReceiptTypeRules(payload as PaymentRecord);
 }
 
 export function processAllocations(
