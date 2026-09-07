@@ -14,11 +14,12 @@
  *   - validateAllocationTotal: ensure allocation rows sum to payment amount
  *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
  */
-
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+import { moneyEquals } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -33,13 +34,13 @@ export function validateAllocationTotal(
   allocations: AllocationRow[]
 ): void {
   const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -63,9 +64,11 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    const merged = mergePatch(existing, payload);
+    return applyReceiptTypeRules(merged);
   }
 
+  payload = applyReceiptTypeRules(payload);
   enforceOrgScope(user, query);
 
   return payload as PaymentRecord;
