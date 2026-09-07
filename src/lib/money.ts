@@ -12,13 +12,17 @@ export function toMoney(value: unknown): number {
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+  return Math.round(n * 100) / 100;
+}
+
+function toCents(value: number): number {
+  return Math.round(toMoney(value) * 100);
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return toCents(a) === toCents(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toCents(a) > toCents(b);
 }
