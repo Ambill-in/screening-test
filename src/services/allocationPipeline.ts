@@ -15,78 +15,97 @@
  *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
  */
 
-import { normalizePayload } from '../hooks/normalizePayload';
-import { stripManagedFields } from '../hooks/stripManagedFields';
-import { mergePatch } from '../hooks/mergePatch';
-import { enforceOrgScope } from '../hooks/enforceOrgScope';
-import { MANAGED_PAYMENT_FIELDS } from '../constants';
-import {
-  AllocationRow,
-  PaymentRecord,
-  PipelineContext,
-} from '../types';
+import { normalizePayload } from "../hooks/normalizePayload";
+import { stripManagedFields } from "../hooks/stripManagedFields";
+import { mergePatch } from "../hooks/mergePatch";
+import { enforceOrgScope } from "../hooks/enforceOrgScope";
+import { MANAGED_PAYMENT_FIELDS } from "../constants";
+import { AllocationRow, PaymentRecord, PipelineContext } from "../types";
+
+import { applyReceiptTypeRules } from "../hooks/applyReceiptTypeRules";
+import { moneyEquals } from "../lib/money";
 
 const MANAGED_FIELDS = [...MANAGED_PAYMENT_FIELDS];
 
 export function validateAllocationTotal(
   paymentAmount: number,
-  allocations: AllocationRow[]
+  allocations: AllocationRow[],
 ): void {
   const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
-    throw new Error('Allocation total must equal payment amount');
+  if (!moneyEquals(total, paymentAmount)) {
+    throw new Error("Allocation total must equal payment amount");
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== "success";
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
   const { method, data, existing, user, query } = context;
 
-  if (method === 'remove') {
+  if (method === "remove") {
     enforceOrgScope(user, query);
     if (!existing) {
-      throw new Error('Payment not found');
+      throw new Error("Payment not found");
     }
     if (!canDeletePayment(existing)) {
-      throw new Error('Cannot delete a payment that has been synced');
+      throw new Error("Cannot delete a payment that has been synced");
     }
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-
-  if (method === 'patch') {
+  if (method === "patch") {
     if (!existing) {
-      throw new Error('Payment not found');
+      throw new Error("Payment not found");
     }
-    return mergePatch(existing, payload);
+
+    enforceOrgScope(user, query);
+
+    const strippedPatch = stripManagedFields(
+      data as Partial<PaymentRecord>,
+      MANAGED_FIELDS,
+    ) as Partial<PaymentRecord>;
+
+    const merged = mergePatch(existing, strippedPatch);
+
+    const normalized = normalizePayload(
+      merged as unknown as Record<string, unknown>,
+    ) as unknown as PaymentRecord;
+
+    return applyReceiptTypeRules(normalized);
   }
 
   enforceOrgScope(user, query);
 
-  return payload as PaymentRecord;
+  let payload = normalizePayload(
+    data as Record<string, unknown>,
+  ) as Partial<PaymentRecord>;
+
+  payload = stripManagedFields(
+    payload,
+    MANAGED_FIELDS,
+  ) as Partial<PaymentRecord>;
+
+  return applyReceiptTypeRules(payload as PaymentRecord);
 }
 
 export function processAllocations(
   paymentAmount: number,
-  allocations: AllocationRow[]
+  allocations: AllocationRow[],
 ): AllocationRow[] {
   if (!allocations.length) {
-    throw new Error('At least one allocation is required');
+    throw new Error("At least one allocation is required");
   }
 
   const seen = new Set<string>();
   for (const row of allocations) {
     if (seen.has(row.invoice_id)) {
-      throw new Error('Duplicate invoice in allocations');
+      throw new Error("Duplicate invoice in allocations");
     }
     seen.add(row.invoice_id);
     if (row.amount < 0) {
-      throw new Error('Allocation amount cannot be negative');
+      throw new Error("Allocation amount cannot be negative");
     }
   }
 
