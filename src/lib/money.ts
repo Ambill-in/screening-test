@@ -7,18 +7,20 @@
  * - moneyGreaterThan: true when first amount is strictly greater at cent precision
  */
 
+const CENT_EPSILON = 1e-9;
+
 export function toMoney(value: unknown): number {
   const n = Number(value);
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return Math.abs(toMoney(a) - toMoney(b)) < CENT_EPSILON;
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toMoney(a) - toMoney(b) > CENT_EPSILON;
 }

@@ -1,0 +1,167 @@
+diff --git a/src/hooks/applyReceiptTypeRules.ts b/src/hooks/applyReceiptTypeRules.ts
+index adf60c0..9dcd5d9 100644
+--- a/src/hooks/applyReceiptTypeRules.ts
++++ b/src/hooks/applyReceiptTypeRules.ts
+@@ -5,11 +5,16 @@
+  * Use isTdsReceipt() from ../lib/receiptType.
+  */
+ 
++import { isTdsReceipt } from '../lib/receiptType';
++
+ interface ReceiptTyped {
+   receipt_type?: unknown;
+   amount_paid?: unknown;
+ }
+ 
+ export function applyReceiptTypeRules<T extends ReceiptTyped>(data: T): T {
++  if (isTdsReceipt(data.receipt_type)) {
++    return { ...data, amount_paid: 0 };
++  }
+   return data;
+ }
+diff --git a/src/hooks/enforceOrgScope.ts b/src/hooks/enforceOrgScope.ts
+index 9684600..1ab8f92 100644
+--- a/src/hooks/enforceOrgScope.ts
++++ b/src/hooks/enforceOrgScope.ts
+@@ -20,4 +20,8 @@ export function enforceOrgScope(
+   if (query.organization_id == null || query.organization_id === '') {
+     throw new Error('Organization ID is required');
+   }
++
++  if (query.organization_id !== user.organization_id) {
++    throw new Error('Unauthorized Access');
++  }
+ }
+diff --git a/src/hooks/mergePatch.ts b/src/hooks/mergePatch.ts
+index f880429..70cd18e 100644
+--- a/src/hooks/mergePatch.ts
++++ b/src/hooks/mergePatch.ts
+@@ -11,5 +11,5 @@ export function mergePatch(
+   existing: PaymentRecord,
+   patch: Partial<PaymentRecord>
+ ): PaymentRecord {
+-  return { ...patch } as PaymentRecord;
++  return { ...existing, ...patch };
+ }
+diff --git a/src/hooks/normalizePayload.ts b/src/hooks/normalizePayload.ts
+index 4438bc3..a344f71 100644
+--- a/src/hooks/normalizePayload.ts
++++ b/src/hooks/normalizePayload.ts
+@@ -14,5 +14,17 @@ export function normalizePayload(
+ ): Record<string, unknown> {
+   const result = { ...data };
+ 
++  for (const field of NULLABLE_FIELDS) {
++    if (result[field] === '') {
++      result[field] = null;
++    }
++  }
++
++  for (const field of SENTINEL_FIELDS) {
++    if (result[field] === NONE_SENTINEL) {
++      result[field] = null;
++    }
++  }
++
+   return result;
+ }
+diff --git a/src/hooks/stripManagedFields.ts b/src/hooks/stripManagedFields.ts
+index 7cbc672..275e505 100644
+--- a/src/hooks/stripManagedFields.ts
++++ b/src/hooks/stripManagedFields.ts
+@@ -8,9 +8,20 @@
+  * Must work for a single object or an array of objects.
+  */
+ 
++function stripOne<T extends object>(record: T, fields: string[]): T {
++  const copy = { ...record } as Record<string, unknown>;
++  for (const field of fields) {
++    delete copy[field];
++  }
++  return copy as unknown as T;
++}
++
+ export function stripManagedFields<T extends object>(
+   data: T | T[],
+   fields: string[]
+ ): T | T[] {
+-  return data;
++  if (Array.isArray(data)) {
++    return data.map((record) => stripOne(record, fields));
++  }
++  return stripOne(data, fields);
+ }
+diff --git a/src/lib/money.ts b/src/lib/money.ts
+index af7b40c..6a64b4d 100644
+--- a/src/lib/money.ts
++++ b/src/lib/money.ts
+@@ -7,18 +7,20 @@
+  * - moneyGreaterThan: true when first amount is strictly greater at cent precision
+  */
+ 
++const CENT_EPSILON = 1e-9;
++
+ export function toMoney(value: unknown): number {
+   const n = Number(value);
+   if (!Number.isFinite(n)) {
+     return 0;
+   }
+-  return n;
++  return Math.round((n + Number.EPSILON) * 100) / 100;
+ }
+ 
+ export function moneyEquals(a: number, b: number): boolean {
+-  return a === b;
++  return Math.abs(toMoney(a) - toMoney(b)) < CENT_EPSILON;
+ }
+ 
+ export function moneyGreaterThan(a: number, b: number): boolean {
+-  return a > b;
++  return toMoney(a) - toMoney(b) > CENT_EPSILON;
+ }
+diff --git a/src/services/allocationPipeline.ts b/src/services/allocationPipeline.ts
+index de35612..46659a9 100644
+--- a/src/services/allocationPipeline.ts
++++ b/src/services/allocationPipeline.ts
+@@ -19,6 +19,8 @@ import { normalizePayload } from '../hooks/normalizePayload';
+ import { stripManagedFields } from '../hooks/stripManagedFields';
+ import { mergePatch } from '../hooks/mergePatch';
+ import { enforceOrgScope } from '../hooks/enforceOrgScope';
++import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
++import { moneyEquals } from '../lib/money';
+ import { MANAGED_PAYMENT_FIELDS } from '../constants';
+ import {
+   AllocationRow,
+@@ -33,13 +35,13 @@ export function validateAllocationTotal(
+   allocations: AllocationRow[]
+ ): void {
+   const total = allocations.reduce((sum, row) => sum + row.amount, 0);
+-  if (total !== paymentAmount) {
++  if (!moneyEquals(total, paymentAmount)) {
+     throw new Error('Allocation total must equal payment amount');
+   }
+ }
+ 
+ export function canDeletePayment(payment: PaymentRecord): boolean {
+-  return true;
++  return payment.sync_status !== 'success';
+ }
+ 
+ export function processPayment(context: PipelineContext): PaymentRecord {
+@@ -63,12 +65,14 @@ export function processPayment(context: PipelineContext): PaymentRecord {
+     if (!existing) {
+       throw new Error('Payment not found');
+     }
+-    return mergePatch(existing, payload);
++    const merged = mergePatch(existing, payload);
++    return applyReceiptTypeRules(merged);
+   }
+ 
++  const withRules = applyReceiptTypeRules(payload as PaymentRecord);
+   enforceOrgScope(user, query);
+ 
+-  return payload as PaymentRecord;
++  return withRules as PaymentRecord;
+ }
+ 
+ export function processAllocations(
