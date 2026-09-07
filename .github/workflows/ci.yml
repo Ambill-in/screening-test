@@ -29,15 +29,15 @@ jobs:
             HEAD="${{ github.sha }}"
           fi
 
-          CHANGED="$(git diff --name-only "$BASE" "$HEAD" -- tests/ || true)"
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD" -- tests/ src/constants.ts src/lib/receiptType.ts || true)"
           if [ -n "$CHANGED" ]; then
-            echo "::error::Test files must not be modified. This submission is disqualified."
-            echo "Changed files under tests/:"
+            echo "::error::Protected files must not be modified. This submission is disqualified."
+            echo "Changed protected files:"
             echo "$CHANGED"
             exit 1
           fi
 
-          echo "Test integrity check passed."
+          echo "Protected file integrity check passed."
 
       - uses: actions/setup-node@v4
         with:
