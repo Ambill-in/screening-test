@@ -1,0 +1,51 @@
+name: Screening Test
+
+on:
+  push:
+    branches: [main, master, submission]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tests were not modified
+        run: |
+          set -euo pipefail
+
+          git fetch origin main --depth=1 2>/dev/null || git fetch origin master --depth=1
+
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            BASE_REF=origin/main
+          else
+            BASE_REF=origin/master
+          fi
+
+          CHANGED="$(git diff --name-only "$BASE_REF" HEAD -- tests/ || true)"
+          if [ -n "$CHANGED" ]; then
+            echo "::error::Test files must not be modified. This submission is disqualified."
+            echo "Changed files under tests/:"
+            echo "$CHANGED"
+            exit 1
+          fi
+
+          echo "Test integrity check passed — tests/ matches ${BASE_REF}."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Report score
+        if: always()
+        run: |
+          echo "Tests completed. Check the log above for pass/fail counts."
