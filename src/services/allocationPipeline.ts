@@ -19,6 +19,8 @@ import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+import { moneyEquals } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -33,13 +35,13 @@ export function validateAllocationTotal(
   allocations: AllocationRow[]
 ): void {
   const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -56,19 +58,22 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-
   if (method === 'patch') {
+    enforceOrgScope(user, query);
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    let patchData = stripManagedFields(data, MANAGED_FIELDS) as Partial<PaymentRecord>;
+    patchData = normalizePayload(patchData as Record<string, unknown>) as Partial<PaymentRecord>;
+    const merged = mergePatch(existing, patchData);
+    return applyReceiptTypeRules(merged);
   }
 
   enforceOrgScope(user, query);
 
-  return payload as PaymentRecord;
+  let payload = stripManagedFields(data, MANAGED_FIELDS) as Partial<PaymentRecord>;
+  payload = normalizePayload(payload as Record<string, unknown>) as Partial<PaymentRecord>;
+  return applyReceiptTypeRules(payload) as PaymentRecord;
 }
 
 export function processAllocations(
