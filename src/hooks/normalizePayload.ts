@@ -11,8 +11,21 @@ const NONE_SENTINEL = '__none__';
 
 export function normalizePayload(
   data: Record<string, unknown>
+
 ): Record<string, unknown> {
   const result = { ...data };
+  
+  for(const f of NULLABLE_FIELDS){
+    if(result[f]  === ''){
+      result[f] = null;
+    }
+  }
 
+  for(const f of SENTINEL_FIELDS){
+    if(result[f] === '__none__'){
+      result[f] = null;
+    }
+  }
+  
   return result;
 }

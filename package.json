@@ -3,6 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "description": "Ambill take-home screening test — payment allocation hook pipeline",
+  "homepage": "https://github.com/Ambill-in/screening-test#readme",
+  "bugs": {
+    "url": "https://github.com/Ambill-in/screening-test/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ambill-in/screening-test.git"
+  },
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -12,5 +12,13 @@ export function stripManagedFields<T extends object>(
   data: T | T[],
   fields: string[]
 ): T | T[] {
-  return data;
+  const stripOne = (record: T): T => {
+    const copy = { ...record };
+    for (const field of fields) {
+      delete (copy as Record<string, unknown>)[field];
+    }
+    return copy;
+  };
+
+  return Array.isArray(data) ? data.map(stripOne) : stripOne(data);
 }
