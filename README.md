@@ -94,7 +94,7 @@ Ambill helps finance teams track **accounts receivable** — money customers owe
 
 **Your submission is the pull request.** We review open PRs — you do not need to email anyone.
 
-If you were given a Google Form link in your invitation email, submit it once after opening your PR (name, email, GitHub username).
+If this repo was updated after you forked, use **Sync fork** on GitHub before you start.
 
 ---
 
@@ -113,5 +113,23 @@ Answer both in the **pull request description** (template provided when you open
 - AI and other tools are fine — we want to see how you work with them.
 - Do not modify anything under `tests/`, `src/constants.ts`, or `src/lib/receiptType.ts` (CI rejects PRs that change tests).
 - Do not add npm dependencies.
+- The README, file comments, and test output are the full spec. **We do not answer individual questions** about the exercise — this keeps the process fair for everyone.
+
+## FAQ
+
+**Where do I submit?**  
+Open a pull request from your fork into `Ambill-in/screening-test` `main`. That PR is your submission.
+
+**What branch name should I use?**  
+`firstname-lastname` (e.g. `jane-doe`).
+
+**Can I email you if I'm stuck?**  
+No. Use the README, comments in `src/`, and failing test messages. If you believe the template itself is broken (not your solution), open a **GitHub Issue** on this repo describing the bug.
+
+**What if CI fails on my PR?**  
+Read the Actions log on your PR. Fix your code and push again to the same branch — CI re-runs automatically.
+
+**Do I need to email a link?**  
+No. We review open pull requests on this repository.
 
 Good luck.
