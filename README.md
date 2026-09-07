@@ -8,7 +8,7 @@ Several functions that run **before a payment is saved** are incomplete or buggy
 
 1. Run `npm install` then `npm test` — some tests will fail.
 2. Fix the files listed in **[Files to implement](#files-to-implement)** until **all 31 tests pass**.
-3. Push your solution and send us the link (see [Submit](#submit)).
+3. Open a **pull request** into this repo (see [Submit](#submit)).
 
 Work only in `src/`. Do not edit `tests/`, `src/lib/receiptType.ts`, or `src/constants.ts`.
 
@@ -60,41 +60,44 @@ Ambill helps finance teams track **accounts receivable** — money customers owe
 
 ## Submit
 
-**Use a fork** (recommended). Do not open pull requests to the Ambill template repo — work in your own copy.
+**Open a pull request** — this is how we receive and review submissions. No email required.
 
-1. **Fork** this repository to your GitHub account (Fork button on GitHub).
-2. Clone **your fork** locally.
-3. Leave your fork's `main` branch unchanged. Create a new branch named with your name, lowercase with hyphens:
+### Steps
 
-   ```bash
-   git checkout -b firstname-lastname
-   # example: git checkout -b jane-doe
-   ```
-
-   Use your real name. If your name is taken, use `firstname-lastname-city` or your GitHub username.
-
-4. Commit your fixes and `WRITTEN_ANSWER.md`, then push:
+1. **Fork** this repo to your GitHub account.
+2. Clone your fork locally.
+3. Create a branch named `firstname-lastname` (lowercase, hyphens):
 
    ```bash
-   git push -u origin firstname-lastname
+   git checkout -b jane-doe
    ```
 
-5. Email us:
-   - Link to **your fork** on GitHub
-   - **Branch name** you pushed (e.g. `jane-doe`)
-   - Confirm CI is green on that branch (Actions tab on your fork)
+4. Fix the code until `npm test` shows **31 passing** locally.
+5. Commit, push to your fork:
 
-Example link to share: `https://github.com/YOUR_USERNAME/screening-test/tree/jane-doe`
+   ```bash
+   git push -u origin jane-doe
+   ```
 
-### Why a fork?
+6. On GitHub, open a **Pull Request**:
+   - **base:** `Ambill-in/screening-test` → `main`
+   - **compare:** your fork → `jane-doe`
+7. Fill in the PR template (name, email, written answers, checklist).
+8. Wait for CI on the PR to turn green.
 
-Each candidate works in their own repo copy. Your branch name identifies your submission — no shared branch names, and we don't need write access to our template repo.
+**Your submission is the pull request.** We review open PRs — you do not need to email anyone.
+
+If you were given a Google Form link in your invitation email, submit it once after opening your PR (name, email, GitHub username).
+
+### Why fork + PR (not a branch on our repo)?
+
+We do not give candidates write access to `main`. A fork keeps our `main` clean and unchanged; the PR shows your diff against our `main` automatically.
 
 ---
 
 ## Written answers (required)
 
-Add `WRITTEN_ANSWER.md` to your branch with answers to both questions below.
+Answer both in the **pull request description** (template provided when you open the PR).
 
 **1.** What was the hardest bug to fix? Describe what failed, the root cause, and how you fixed it.
 
@@ -105,7 +108,7 @@ Add `WRITTEN_ANSWER.md` to your branch with answers to both questions below.
 ## Rules
 
 - AI and other tools are fine — we want to see how you work with them.
-- Do not modify anything under `tests/`, `src/constants.ts`, or `src/lib/receiptType.ts` (CI rejects submissions that change tests).
+- Do not modify anything under `tests/`, `src/constants.ts`, or `src/lib/receiptType.ts` (CI rejects PRs that change tests).
 - Do not add npm dependencies.
 
 Good luck.
