@@ -17,6 +17,16 @@ export function enforceOrgScope(
     return;
   }
 
+   const organizationId = query.organization_id;
+
+   if(!organizationId){
+    throw new Error('Organization ID is required');
+   }
+
+   if( organizationId !== user.organization_id) {
+    throw new Error('Unauthorized Access');
+   }
+
   if (query.organization_id == null || query.organization_id === '') {
     throw new Error('Organization ID is required');
   }
