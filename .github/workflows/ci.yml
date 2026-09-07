@@ -2,9 +2,7 @@ name: Screening Test
 
 on:
   push:
-    branches: [main, master, submission]
   pull_request:
-    branches: [main, master]
 
 jobs:
   test:

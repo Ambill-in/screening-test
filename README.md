@@ -8,7 +8,7 @@ Several functions that run **before a payment is saved** are incomplete or buggy
 
 1. Run `npm install` then `npm test` — some tests will fail.
 2. Fix the files listed in **[Files to implement](#files-to-implement)** until **all 31 tests pass**.
-3. Push to a branch named `submission` and send us the repo link plus your written answers.
+3. Push your solution and send us the link (see [Submit](#submit)).
 
 Work only in `src/`. Do not edit `tests/`, `src/lib/receiptType.ts`, or `src/constants.ts`.
 
@@ -60,18 +60,41 @@ Ambill helps finance teams track **accounts receivable** — money customers owe
 
 ## Submit
 
-1. Fork this repo (or push to your own public GitHub repo).
-2. Create a branch `submission`, commit your changes, and push.
-3. Share the link to your repo or pull request.
-4. Add `WRITTEN_ANSWER.md` (or put in the PR description) with answers to the two questions below.
+**Use a fork** (recommended). Do not open pull requests to the Ambill template repo — work in your own copy.
 
-Keep the default `main` branch unchanged — push your solution on `submission` only.
+1. **Fork** this repository to your GitHub account (Fork button on GitHub).
+2. Clone **your fork** locally.
+3. Leave your fork's `main` branch unchanged. Create a new branch named with your name, lowercase with hyphens:
+
+   ```bash
+   git checkout -b firstname-lastname
+   # example: git checkout -b jane-doe
+   ```
+
+   Use your real name. If your name is taken, use `firstname-lastname-city` or your GitHub username.
+
+4. Commit your fixes and `WRITTEN_ANSWER.md`, then push:
+
+   ```bash
+   git push -u origin firstname-lastname
+   ```
+
+5. Email us:
+   - Link to **your fork** on GitHub
+   - **Branch name** you pushed (e.g. `jane-doe`)
+   - Confirm CI is green on that branch (Actions tab on your fork)
+
+Example link to share: `https://github.com/YOUR_USERNAME/screening-test/tree/jane-doe`
+
+### Why a fork?
+
+Each candidate works in their own repo copy. Your branch name identifies your submission — no shared branch names, and we don't need write access to our template repo.
 
 ---
 
 ## Written answers (required)
 
-Answer both in a few sentences each.
+Add `WRITTEN_ANSWER.md` to your branch with answers to both questions below.
 
 **1.** What was the hardest bug to fix? Describe what failed, the root cause, and how you fixed it.
 
