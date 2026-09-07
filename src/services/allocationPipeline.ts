@@ -3,16 +3,12 @@
  *
  * processPayment runs before create / patch / delete:
  *   - strip managed fields (MANAGED_PAYMENT_FIELDS from src/constants.ts)
- *   - on PATCH: merge partial body with existing record
+ *   - on PATCH: enforce org scope, strip organization_id from the body,
+ *     then merge partial body with existing record
  *   - normalize payload (empty strings, __none__)
  *   - apply receipt-type rules (TDS, etc.)
  *   - on create: enforce org scope on query
  *   - on delete: enforce org scope, then check canDeletePayment
- *
- * TODO:
- *   - canDeletePayment: block delete when payment is synced (see README)
- *   - validateAllocationTotal: ensure allocation rows sum to payment amount
- *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
  */
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
@@ -61,9 +57,14 @@ export function processPayment(context: PipelineContext): PaymentRecord {
   payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
 
   if (method === 'patch') {
+    enforceOrgScope(user, query);
     if (!existing) {
       throw new Error('Payment not found');
     }
+    // organization_id identifies the tenant a record belongs to; it must
+    // never be changed by a client-supplied patch body, only by the
+    // (already-verified) org scope on the request itself.
+    delete payload.organization_id;
     const merged = mergePatch(existing, payload);
     return applyReceiptTypeRules(merged);
   }
