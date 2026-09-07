@@ -7,7 +7,7 @@ export interface PaymentRecord {
   payment_mode: string | null;
   bank_account_id: string | null;
   receipt_type: string;
-  tally_sync_status: SyncStatus;
+  sync_status: SyncStatus;
   public_key?: string;
   payment_seq?: number;
 }

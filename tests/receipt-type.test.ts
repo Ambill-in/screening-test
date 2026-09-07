@@ -16,7 +16,7 @@ const tdsPayment: PaymentRecord = {
   payment_mode: null,
   bank_account_id: null,
   receipt_type: 'TDS',
-  tally_sync_status: 'pending',
+  sync_status: 'pending',
 };
 
 function makeContext(overrides: Partial<PipelineContext>): PipelineContext {
@@ -58,7 +58,7 @@ describe('TDS payments through processPayment', () => {
           amount_paid: 1800,
           payment_mode: '',
           bank_account_id: '__none__',
-          tally_sync_status: 'pending',
+          sync_status: 'pending',
         },
       })
     );

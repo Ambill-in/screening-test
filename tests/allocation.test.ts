@@ -19,7 +19,7 @@ const existing: PaymentRecord = {
   payment_mode: 'NEFT',
   bank_account_id: 'bank-1',
   receipt_type: 'REGULAR',
-  tally_sync_status: 'pending',
+  sync_status: 'pending',
   public_key: 'PAY-0001',
   payment_seq: 1,
 };
@@ -44,7 +44,7 @@ describe('processPayment', () => {
           payment_mode: '',
           bank_account_id: '__none__',
           receipt_type: 'REGULAR',
-          tally_sync_status: 'pending',
+          sync_status: 'pending',
           public_key: 'HACKED',
           payment_seq: 999,
         },
@@ -69,18 +69,18 @@ describe('processPayment', () => {
     expect(result.payment_mode).toBe('NEFT');
   });
 
-  it('blocks delete when tally_sync_status is success', () => {
+  it('blocks delete when sync_status is success', () => {
     expect(() =>
       processPayment(
         makeContext({
           method: 'remove',
-          existing: { ...existing, tally_sync_status: 'success' },
+          existing: { ...existing, sync_status: 'success' },
         })
       )
     ).toThrow('Cannot delete a payment that has been synced');
   });
 
-  it('allows delete when tally_sync_status is pending', () => {
+  it('allows delete when sync_status is pending', () => {
     const result = processPayment(
       makeContext({
         method: 'remove',
@@ -93,7 +93,7 @@ describe('processPayment', () => {
 
 describe('canDeletePayment', () => {
   it('returns false for synced payments', () => {
-    expect(canDeletePayment({ ...existing, tally_sync_status: 'success' })).toBe(false);
+    expect(canDeletePayment({ ...existing, sync_status: 'success' })).toBe(false);
   });
 
   it('returns true for pending payments', () => {

@@ -13,7 +13,7 @@ const basePayment: PaymentRecord = {
   payment_mode: 'NEFT',
   bank_account_id: 'bank-1',
   receipt_type: 'REGULAR',
-  tally_sync_status: 'pending',
+  sync_status: 'pending',
   public_key: 'PAY-0001',
   payment_seq: 1,
 };

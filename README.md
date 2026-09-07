@@ -51,7 +51,7 @@ Ambill helps finance teams track **accounts receivable** — money customers owe
 | **Allocations** | A payment is split across invoices. The total allocated must equal the payment amount. |
 | **REGULAR receipt** | Normal cash/bank receipt against invoices. |
 | **TDS receipt** | Tax deducted at source — a tax credit, **not** cash in the bank. Must not store cash in `amount_paid`. |
-| **Synced payments** | If `tally_sync_status` is `success`, the payment was sent to the customer's accounting system and must not be deleted. |
+| **Synced payments** | If `sync_status` is `success`, the payment was sent to the customer's accounting system and must not be deleted. |
 | **Organizations** | Each customer is a separate tenant. Users may only access their own `organization_id`. |
 | **`__none__` sentinel** | The UI sends `__none__` when no bank account is selected. The API must store `null` instead. |
 | **Managed fields** | `public_key` and `payment_seq` are set by the server. Clients must not send them — see `MANAGED_PAYMENT_FIELDS` in `src/constants.ts`. |
