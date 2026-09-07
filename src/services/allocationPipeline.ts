@@ -19,6 +19,8 @@ import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+import { moneyEquals } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -33,13 +35,14 @@ export function validateAllocationTotal(
   allocations: AllocationRow[]
 ): void {
   const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -47,26 +50,45 @@ export function processPayment(context: PipelineContext): PaymentRecord {
 
   if (method === 'remove') {
     enforceOrgScope(user, query);
+
     if (!existing) {
       throw new Error('Payment not found');
     }
+
     if (!canDeletePayment(existing)) {
       throw new Error('Cannot delete a payment that has been synced');
     }
+
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
+  let payload = stripManagedFields(
+    data as Partial<PaymentRecord>,
+    MANAGED_FIELDS
+  ) as Partial<PaymentRecord>;
 
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+
+    const merged = mergePatch(existing, payload);
+
+    const normalized = normalizePayload(
+      merged as unknown as Record<string, unknown>
+    ) as unknown as PaymentRecord;
+
+    return applyReceiptTypeRules(normalized);
   }
 
   enforceOrgScope(user, query);
+
+  payload = normalizePayload(
+    payload as Record<string, unknown>
+    
+  ) as Partial<PaymentRecord>;
+
+  payload = applyReceiptTypeRules(payload);
 
   return payload as PaymentRecord;
 }
@@ -80,16 +102,20 @@ export function processAllocations(
   }
 
   const seen = new Set<string>();
+
   for (const row of allocations) {
     if (seen.has(row.invoice_id)) {
       throw new Error('Duplicate invoice in allocations');
     }
+
     seen.add(row.invoice_id);
+
     if (row.amount < 0) {
       throw new Error('Allocation amount cannot be negative');
     }
   }
 
   validateAllocationTotal(paymentAmount, allocations);
+
   return allocations;
 }
