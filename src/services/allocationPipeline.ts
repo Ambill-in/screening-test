@@ -19,6 +19,8 @@ import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+import { moneyEquals, toMoney } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -32,14 +34,14 @@ export function validateAllocationTotal(
   paymentAmount: number,
   allocations: AllocationRow[]
 ): void {
-  const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  const total = allocations.reduce((sum, row) => sum + toMoney(row.amount), 0);
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -56,19 +58,23 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
+  let payload = stripManagedFields(
+    data as Record<string, unknown>,
+    MANAGED_FIELDS
+  ) as Record<string, unknown>;
+  payload = normalizePayload(payload);
 
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    const merged = mergePatch(existing, payload as unknown as Partial<PaymentRecord>);
+    return applyReceiptTypeRules(merged);
   }
 
   enforceOrgScope(user, query);
 
-  return payload as PaymentRecord;
+  return applyReceiptTypeRules(payload as unknown as PaymentRecord);
 }
 
 export function processAllocations(
