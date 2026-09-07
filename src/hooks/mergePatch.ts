@@ -11,5 +11,11 @@ export function mergePatch(
   existing: PaymentRecord,
   patch: Partial<PaymentRecord>
 ): PaymentRecord {
-  return { ...patch } as PaymentRecord;
+  const result: PaymentRecord = { ...existing };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) {
+      (result as any)[key] = value;
+    }
+  }
+  return result;
 }
