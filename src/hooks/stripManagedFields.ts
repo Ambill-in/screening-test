@@ -1,4 +1,4 @@
-/**
+ /**
  * Remove managed fields from a payment payload before save.
  *
  * Managed fields are server-assigned (see MANAGED_PAYMENT_FIELDS in ../constants.ts).
@@ -12,5 +12,19 @@ export function stripManagedFields<T extends object>(
   data: T | T[],
   fields: string[]
 ): T | T[] {
-  return data;
+  const strip = (item: T): T => {
+    const result = { ...item };
+
+    for (const field of fields) {
+      delete (result as Record<string, unknown>)[field];
+    }
+
+    return result;
+  };
+
+  if (Array.isArray(data)) {
+    return data.map(strip);
+  }
+
+  return strip(data);
 }

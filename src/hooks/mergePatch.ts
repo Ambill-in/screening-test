@@ -1,4 +1,4 @@
-/**
+ /**
  * Apply a partial PATCH to an existing payment.
  *
  * TODO: return a full payment record.
@@ -11,5 +11,8 @@ export function mergePatch(
   existing: PaymentRecord,
   patch: Partial<PaymentRecord>
 ): PaymentRecord {
-  return { ...patch } as PaymentRecord;
+  return {
+    ...existing,
+    ...patch,
+  };
 }
