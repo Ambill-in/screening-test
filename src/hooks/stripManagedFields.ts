@@ -8,9 +8,20 @@
  * Must work for a single object or an array of objects.
  */
 
+function stripOne<T extends object>(data: T, fields: string[]): T {
+  const result = { ...data } as T & Record<string, unknown>;
+  for (const field of fields) {
+    delete result[field];
+  }
+  return result;
+}
+
 export function stripManagedFields<T extends object>(
   data: T | T[],
   fields: string[]
 ): T | T[] {
-  return data;
+  if (Array.isArray(data)) {
+    return data.map((item) => stripOne(item, fields));
+  }
+  return stripOne(data, fields);
 }
