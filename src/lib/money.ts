@@ -2,6 +2,8 @@
  * Round and compare currency at 2 decimal places (paisa precision).
  */
 
+// Convert to integer paisa before comparing: float math like
+// 0.1 + 0.2 gives 0.30000000000000004, but 10 + 20 paisa is exact.
 function toPaisa(value: number): number {
   return Math.round(value * 100);
 }
