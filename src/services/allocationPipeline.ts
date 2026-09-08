@@ -38,8 +38,13 @@ export function validateAllocationTotal(
   }
 }
 
+/**
+ * A payment that reached the customer's accounting system is already in their
+ * books. Deleting it here would leave the two ledgers permanently out of step,
+ * so a successful sync makes the payment undeletable.
+ */
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
