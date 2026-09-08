@@ -19,6 +19,7 @@ import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { moneyEquals, toMoney } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -28,12 +29,19 @@ import {
 
 const MANAGED_FIELDS = [...MANAGED_PAYMENT_FIELDS];
 
+/**
+ * A payment must be fully allocated across its invoices.
+ *
+ * Summing the rows as raw floats and comparing with !== rejects splits that are
+ * correct to the paisa — 0.10 + 0.20 lands on 0.30000000000000004, which is not
+ * 0.30 — so the comparison is made at the precision the amounts actually carry.
+ */
 export function validateAllocationTotal(
   paymentAmount: number,
   allocations: AllocationRow[]
 ): void {
-  const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  const total = allocations.reduce((sum, row) => sum + toMoney(row.amount), 0);
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
