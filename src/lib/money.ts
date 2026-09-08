@@ -1,24 +1,23 @@
 /**
  * Round and compare currency at 2 decimal places (paisa precision).
- *
- * TODO:
- * - toMoney: parse input, return a number rounded to 2 decimals (invalid → 0)
- * - moneyEquals: true when amounts match at cent precision
- * - moneyGreaterThan: true when first amount is strictly greater at cent precision
  */
+
+function toPaisa(value: number): number {
+  return Math.round(value * 100);
+}
 
 export function toMoney(value: unknown): number {
   const n = Number(value);
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+  return toPaisa(n) / 100;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return toPaisa(a) === toPaisa(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toPaisa(a) > toPaisa(b);
 }
