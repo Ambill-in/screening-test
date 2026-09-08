@@ -1,10 +1,5 @@
 /**
  * Restrict API access to the user's organization.
- *
- * - superadmin: no checks
- * - everyone else: query.organization_id is required
- * - everyone else: query.organization_id must match user.organization_id
- *   (throw new Error('Unauthorized Access') if not)
  */
 
 import { UserContext } from '../types';
@@ -17,7 +12,11 @@ export function enforceOrgScope(
     return;
   }
 
-  if (query.organization_id == null || query.organization_id === '') {
+  const orgId = query.organization_id;
+  if (orgId == null || orgId === '') {
     throw new Error('Organization ID is required');
+  }
+  if (orgId !== user.organization_id) {
+    throw new Error('Unauthorized Access');
   }
 }
