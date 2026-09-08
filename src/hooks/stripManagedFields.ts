@@ -8,9 +8,15 @@
  * Must work for a single object or an array of objects.
  */
 
-export function stripManagedFields<T extends object>(
-  data: T | T[],
+function stripOne<T extends Record<string, any>>(record: T, fields: string[]): T {
+  const clone = { ...record };
+  for (const f of fields) delete (clone as any)[f];
+  return clone;
+}
+
+export function stripManagedFields<T extends Record<string, any>>(
+  record: T | T[],
   fields: string[]
 ): T | T[] {
-  return data;
+  return Array.isArray(record) ? record.map(r => stripOne(r, fields)) : stripOne(record, fields);
 }

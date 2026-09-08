@@ -7,18 +7,21 @@
  * - moneyGreaterThan: true when first amount is strictly greater at cent precision
  */
 
-export function toMoney(value: unknown): number {
-  const n = Number(value);
-  if (!Number.isFinite(n)) {
-    return 0;
-  }
-  return n;
+export function toMoney(value: number | string | null | undefined): number {
+  if (value === null || value === undefined || value === '') return 0;
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (Number.isNaN(num)) return 0;
+  return Math.round(num * 100) / 100;
+}
+
+function toCents(value: number | string | null | undefined): number {
+  return Math.round(toMoney(value) * 100);
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return toCents(a) === toCents(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toCents(a) > toCents(b);
 }

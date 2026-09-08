@@ -9,10 +9,11 @@ const NULLABLE_FIELDS = ['payment_mode', 'bank_account_id'] as const;
 const SENTINEL_FIELDS = ['bank_account_id'] as const;
 const NONE_SENTINEL = '__none__';
 
-export function normalizePayload(
-  data: Record<string, unknown>
-): Record<string, unknown> {
-  const result = { ...data };
-
+export function normalizePayload(payload: any): any {
+  const result = { ...payload };
+  if (result.payment_mode === '') result.payment_mode = null;
+  if (result.bank_account_id === '' || result.bank_account_id === '__none__') {
+    result.bank_account_id = null;
+  }
   return result;
 }
