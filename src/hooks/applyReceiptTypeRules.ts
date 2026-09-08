@@ -4,6 +4,7 @@
  * TODO: implement TDS handling per README (Background: billing rules).
  * Use isTdsReceipt() from ../lib/receiptType.
  */
+import { isTdsReceipt } from '../lib/receiptType';
 
 interface ReceiptTyped {
   receipt_type?: unknown;
@@ -11,5 +12,13 @@ interface ReceiptTyped {
 }
 
 export function applyReceiptTypeRules<T extends ReceiptTyped>(data: T): T {
+
+  if (isTdsReceipt(data.receipt_type)) {
+    return {
+      ...data,
+      amount_paid: 0,
+    };
+  }
+  
   return data;
 }
