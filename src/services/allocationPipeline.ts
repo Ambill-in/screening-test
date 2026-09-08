@@ -9,16 +9,17 @@
  *   - on create: enforce org scope on query
  *   - on delete: enforce org scope, then check canDeletePayment
  *
- * TODO:
- *   - canDeletePayment: block delete when payment is synced (see README)
- *   - validateAllocationTotal: ensure allocation rows sum to payment amount
- *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
+ * The merge sits before normalize and receipt-type rules on purpose: a PATCH body
+ * carries only the fields being changed, so the record is not complete enough to
+ * judge until the stored values have been folded in.
  */
 
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+import { moneyEquals, toMoney } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -28,18 +29,30 @@ import {
 
 const MANAGED_FIELDS = [...MANAGED_PAYMENT_FIELDS];
 
+/**
+ * A payment must be fully allocated across its invoices.
+ *
+ * Summing the rows as raw floats and comparing with !== rejects splits that are
+ * correct to the paisa — 0.10 + 0.20 lands on 0.30000000000000004, which is not
+ * 0.30 — so the comparison is made at the precision the amounts actually carry.
+ */
 export function validateAllocationTotal(
   paymentAmount: number,
   allocations: AllocationRow[]
 ): void {
-  const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  const total = allocations.reduce((sum, row) => sum + toMoney(row.amount), 0);
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
+/**
+ * A payment that reached the customer's accounting system is already in their
+ * books. Deleting it here would leave the two ledgers permanently out of step,
+ * so a successful sync makes the payment undeletable.
+ */
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -56,17 +69,21 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
+  let payload = stripManagedFields(data, MANAGED_FIELDS) as Partial<PaymentRecord>;
 
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    payload = mergePatch(existing, payload);
   }
 
-  enforceOrgScope(user, query);
+  payload = normalizePayload(payload as Record<string, unknown>) as Partial<PaymentRecord>;
+  payload = applyReceiptTypeRules(payload);
+
+  if (method === 'create') {
+    enforceOrgScope(user, query);
+  }
 
   return payload as PaymentRecord;
 }
