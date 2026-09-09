@@ -15,6 +15,7 @@
  *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
  */
 
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
@@ -39,7 +40,7 @@ export function validateAllocationTotal(
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+ return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -47,28 +48,41 @@ export function processPayment(context: PipelineContext): PaymentRecord {
 
   if (method === 'remove') {
     enforceOrgScope(user, query);
+
     if (!existing) {
       throw new Error('Payment not found');
     }
+
     if (!canDeletePayment(existing)) {
       throw new Error('Cannot delete a payment that has been synced');
     }
+
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
+  let payload = normalizePayload(
+    data as Record<string, unknown>
+  ) as Partial<PaymentRecord>;
+
+  payload = stripManagedFields(
+    payload,
+    MANAGED_FIELDS
+  ) as Partial<PaymentRecord>;
+
+  let result: PaymentRecord;
 
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+
+    result = mergePatch(existing, payload);
+  } else {
+    enforceOrgScope(user, query);
+    result = payload as PaymentRecord;
   }
 
-  enforceOrgScope(user, query);
-
-  return payload as PaymentRecord;
+  return applyReceiptTypeRules(result);
 }
 
 export function processAllocations(
