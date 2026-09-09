@@ -13,6 +13,6 @@ export function normalizePayload(
   data: Record<string, unknown>
 ): Record<string, unknown> {
   const result = { ...data };
-
+  for (const k in result) if (result[k] === '' || result[k] === '__none__') result[k] = null;
   return result;
 }
