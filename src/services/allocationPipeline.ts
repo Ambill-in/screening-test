@@ -19,6 +19,8 @@ import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+import { toMoney, moneyEquals } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -32,14 +34,14 @@ export function validateAllocationTotal(
   paymentAmount: number,
   allocations: AllocationRow[]
 ): void {
-  const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  const total = allocations.reduce((sum, row) => sum + toMoney(row.amount), 0);
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -59,16 +61,19 @@ export function processPayment(context: PipelineContext): PaymentRecord {
   let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
   payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
 
+  let payment: PaymentRecord;
+
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    payment = mergePatch(existing, payload);
+  } else {
+    enforceOrgScope(user, query);
+    payment = payload as PaymentRecord;
   }
 
-  enforceOrgScope(user, query);
-
-  return payload as PaymentRecord;
+  return applyReceiptTypeRules(payment);
 }
 
 export function processAllocations(
