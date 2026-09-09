@@ -13,9 +13,10 @@ export function mergePatch(
 ): PaymentRecord {
   const result = { ...existing };
 
-  for (const [key, value] of Object.entries(patch)) {
+  for (const key of Object.keys(patch) as (keyof PaymentRecord)[]) {
+    const value = patch[key];
     if (value !== undefined) {
-      (result as any)[key] = value;
+      (result as Record<keyof PaymentRecord, unknown>)[key] = value;
     }
   }
   return result;
