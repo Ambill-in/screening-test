@@ -1,30 +1,10 @@
-/**
- * Payment save pipeline and allocation validation.
- *
- * processPayment runs before create / patch / delete:
- *   - strip managed fields (MANAGED_PAYMENT_FIELDS from src/constants.ts)
- *   - on PATCH: merge partial body with existing record
- *   - normalize payload (empty strings, __none__)
- *   - apply receipt-type rules (TDS, etc.)
- *   - on create: enforce org scope on query
- *   - on delete: enforce org scope, then check canDeletePayment
- *
- * TODO:
- *   - canDeletePayment: block delete when payment is synced (see README)
- *   - validateAllocationTotal: ensure allocation rows sum to payment amount
- *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
- */
-
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
-import {
-  AllocationRow,
-  PaymentRecord,
-  PipelineContext,
-} from '../types';
+import { AllocationRow, PaymentRecord, PipelineContext } from '../types';
 
 const MANAGED_FIELDS = [...MANAGED_PAYMENT_FIELDS];
 
@@ -39,7 +19,7 @@ export function validateAllocationTotal(
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -56,19 +36,33 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+
+    const rawData = (data || {}) as Record<string, unknown>;
+    const cleanPatch = stripManagedFields(rawData, MANAGED_FIELDS);
+    const normalizedPatch = normalizePayload(cleanPatch as Record<string, unknown>);
+    const merged = mergePatch(existing as unknown as Record<string,unknown>, normalizedPatch as Record<string,unknown>);
+
+    // Apply TDS receipt type rules on the final merged record
+    const withRules = applyReceiptTypeRules((merged as unknown)as PaymentRecord);
+
+    return withRules as PaymentRecord;
   }
 
+  // Handle 'create' method
   enforceOrgScope(user, query);
 
-  return payload as PaymentRecord;
+  const rawData = (data || {}) as Record<string, unknown>;
+  const cleanData = stripManagedFields(rawData, MANAGED_FIELDS);
+  const normalized = normalizePayload(cleanData as Record<string, unknown>);
+
+  // Apply TDS receipt type rules on newly created records
+  const withRules = applyReceiptTypeRules((normalized as unknown)as PaymentRecord);
+
+  return withRules as unknown as PaymentRecord;
 }
 
 export function processAllocations(
