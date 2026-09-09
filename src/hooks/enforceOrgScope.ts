@@ -16,8 +16,11 @@ export function enforceOrgScope(
   if (user.role === 'superadmin') {
     return;
   }
-
   if (query.organization_id == null || query.organization_id === '') {
     throw new Error('Organization ID is required');
+  }
+  const orgId = String(query.organization_id);
+  if (orgId !== user.organization_id) {
+    throw new Error('Unauthorized Access');
   }
 }
