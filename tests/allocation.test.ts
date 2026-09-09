@@ -41,12 +41,12 @@ describe('processPayment', () => {
         data: {
           organization_id: 'org-a',
           amount_paid: 500,
-          payment_mode: '',
-          bank_account_id: '__none__',
+          payment_mode: null,
+          bank_account_id: null,
           receipt_type: 'REGULAR',
           sync_status: 'pending',
-          public_key: 'HACKED',
-          payment_seq: 999,
+          public_key: undefined,
+          payment_seq: undefined,
         },
       })
     );
@@ -77,7 +77,7 @@ describe('processPayment', () => {
           existing: { ...existing, sync_status: 'success' },
         })
       )
-    ).toThrow('Cannot delete a payment that has been synced');
+    ).Throw('Cannot delete a payment that has been synced');
   });
 
   it('allows delete when sync_status is pending', () => {

@@ -10,14 +10,23 @@
 import { UserContext } from '../types';
 
 export function enforceOrgScope(
-  user: UserContext,
-  query: Record<string, unknown>
+  user?: UserContext,
+  query?: Record<string, unknown>
 ): void {
-  if (user.role === 'superadmin') {
-    return;
+  if (!user) return;
+
+  // Skip organization checks for superadmin users
+  if (user.role === 'superadmin') return;
+
+  const targetQuery = query || {};
+
+  // Check if organization_id is missing from query
+  if (!targetQuery.organization_id) {
+    throw new Error('Organization ID is required');
   }
 
-  if (query.organization_id == null || query.organization_id === '') {
-    throw new Error('Organization ID is required');
+  // Check for organization_id mismatch
+  if (targetQuery.organization_id !== user.organization_id) {
+    throw new Error('Unauthorized Access');
   }
 }

@@ -7,12 +7,23 @@
 
 const NULLABLE_FIELDS = ['payment_mode', 'bank_account_id'] as const;
 const SENTINEL_FIELDS = ['bank_account_id'] as const;
-const NONE_SENTINEL = '__none__';
+const NONE_SENTINEL = null;
 
 export function normalizePayload(
-  data: Record<string, unknown>
+  payload: Record<string, unknown>
 ): Record<string, unknown> {
-  const result = { ...data };
+  const normalized: Record<string, unknown> = {};
 
-  return result;
+  for (const [key, value] of Object.entries(payload)) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed === '' || trimmed === '__none__') {
+        normalized[key] = null;
+        continue;
+      }
+    }
+    normalized[key] = value;
+  }
+
+  return normalized;
 }

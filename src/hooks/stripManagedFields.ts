@@ -8,9 +8,19 @@
  * Must work for a single object or an array of objects.
  */
 
-export function stripManagedFields<T extends object>(
-  data: T | T[],
-  fields: string[]
-): T | T[] {
-  return data;
+export function stripManagedFields(
+  payload: Record<string, unknown> | Array<Record<string, unknown>>,
+  managedFields: string[]
+): Record<string, unknown> | Array<Record<string, unknown>> {
+  if (Array.isArray(payload)) {
+    return payload.map((item) =>
+      stripManagedFields(item, managedFields) as Record<string, unknown>
+    );
+  }
+
+  const result = { ...payload };
+  for (const field of managedFields) {
+    delete result[field];
+  }
+  return result;
 }
