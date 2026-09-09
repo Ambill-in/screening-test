@@ -4,12 +4,12 @@
  * TODO: return a full payment record.
  * Fields present in patch override existing; fields omitted in patch stay from existing.
  */
-
 import { PaymentRecord } from '../types';
 
 export function mergePatch(
   existing: PaymentRecord,
   patch: Partial<PaymentRecord>
 ): PaymentRecord {
-  return { ...patch } as PaymentRecord;
+  //change patch +existing will be used 
+  return { ...existing, ...patch };
 }
