@@ -38,8 +38,10 @@ export function validateAllocationTotal(
   }
 }
 
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
+
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -47,28 +49,20 @@ export function processPayment(context: PipelineContext): PaymentRecord {
 
   if (method === 'remove') {
     enforceOrgScope(user, query);
-    if (!existing) {
-      throw new Error('Payment not found');
-    }
-    if (!canDeletePayment(existing)) {
-      throw new Error('Cannot delete a payment that has been synced');
-    }
+    if (!existing) throw new Error('Payment not found');
+    if (!canDeletePayment(existing)) throw new Error('Cannot delete a payment that has been synced');
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-
-  if (method === 'patch') {
-    if (!existing) {
-      throw new Error('Payment not found');
-    }
-    return mergePatch(existing, payload);
-  }
-
   enforceOrgScope(user, query);
+  if (method === 'patch' && !existing) throw new Error('Payment not found');
 
-  return payload as PaymentRecord;
+  let base = existing ? mergePatch(existing, data as any) : data;
+  base = stripManagedFields(base as any, MANAGED_FIELDS);
+  base = normalizePayload(base as any);
+  base = applyReceiptTypeRules(base as any);
+
+  return base as PaymentRecord;
 }
 
 export function processAllocations(
