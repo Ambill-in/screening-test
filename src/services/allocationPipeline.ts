@@ -20,6 +20,7 @@ import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
 import {
   AllocationRow,
   PaymentRecord,
@@ -39,38 +40,79 @@ export function validateAllocationTotal(
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  //return true;
+    return payment.sync_status !== 'success';
+//Cannot delete a payment that has been synced
 }
+
+// export function processPayment(context: PipelineContext): PaymentRecord {
+//   const { method, data, existing, user, query } = context;
+
+//   if (method === 'remove') {
+//     enforceOrgScope(user, query);
+//     if (!existing) {
+//       throw new Error('Payment not found');
+//     }
+//     if (!canDeletePayment(existing)) {
+//       throw new Error('Cannot delete a payment that has been synced');
+//     }
+//     return existing;
+//   }
+
+//   let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
+//   payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
+
+//   if (method === 'patch') {
+//     if (!existing) {
+//       throw new Error('Payment not found');
+//     }
+//     return mergePatch(existing, payload);
+//   }
+
+//   enforceOrgScope(user, query);
+
+//   return payload as PaymentRecord;
+// }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
   const { method, data, existing, user, query } = context;
 
   if (method === 'remove') {
     enforceOrgScope(user, query);
+
     if (!existing) {
       throw new Error('Payment not found');
     }
+
     if (!canDeletePayment(existing)) {
       throw new Error('Cannot delete a payment that has been synced');
     }
+
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
+  let payload = normalizePayload(
+    data as Record<string, unknown>
+  ) as Partial<PaymentRecord>;
+
+  payload = stripManagedFields(
+    payload,
+    MANAGED_FIELDS
+  ) as Partial<PaymentRecord>;
 
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+
+    const merged = mergePatch(existing, payload);
+    return applyReceiptTypeRules(merged);
   }
 
   enforceOrgScope(user, query);
 
-  return payload as PaymentRecord;
+  return applyReceiptTypeRules(payload as PaymentRecord);
 }
-
 export function processAllocations(
   paymentAmount: number,
   allocations: AllocationRow[]
