@@ -8,17 +8,30 @@
  */
 
 export function toMoney(value: unknown): number {
-  const n = Number(value);
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  const n = typeof value === 'string' ? parseFloat(value) : Number(value);
+
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+
+  // Round to 2 decimal places
+  return Math.round(n * 100) / 100;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  // Convert both to cents, round, then compare
+  const aCents = Math.round(a * 100);
+  const bCents = Math.round(b * 100);
+  return aCents === bCents;
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  // Compare at cent precision
+  const aCents = Math.round(a * 100);
+  const bCents = Math.round(b * 100);
+  return aCents > bCents;
 }

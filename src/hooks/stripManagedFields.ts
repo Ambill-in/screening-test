@@ -8,9 +8,15 @@
  * Must work for a single object or an array of objects.
  */
 
-export function stripManagedFields<T extends object>(
-  data: T | T[],
-  fields: string[]
-): T | T[] {
-  return data;
+export function stripManagedFields(data: any, fields: string[]): any {
+  if (Array.isArray(data)) {
+    return data.map(record => stripManagedFields(record, fields));
+  }
+
+  const stripped = { ...data };
+  fields.forEach(field => {
+    delete stripped[field];
+  });
+
+  return stripped;
 }

@@ -11,5 +11,5 @@ export function mergePatch(
   existing: PaymentRecord,
   patch: Partial<PaymentRecord>
 ): PaymentRecord {
-  return { ...patch } as PaymentRecord;
+  return { ...existing, ...patch } as PaymentRecord;
 }

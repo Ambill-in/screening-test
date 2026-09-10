@@ -13,11 +13,18 @@ export function enforceOrgScope(
   user: UserContext,
   query: Record<string, unknown>
 ): void {
+  // Superadmins bypass all checks
   if (user.role === 'superadmin') {
     return;
   }
 
-  if (query.organization_id == null || query.organization_id === '') {
-    throw new Error('Organization ID is required');
+  // Non-superadmin must provide organization_id
+  if (!query.organization_id) {
+    throw new Error('Organization ID is required'); 
+  }
+
+  // Query organization_id must match user's organization_id
+  if (query.organization_id !== user.organization_id) {
+    throw new Error('Unauthorized Access');
   }
 }
