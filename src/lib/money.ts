@@ -11,7 +11,7 @@ export function toMoney(value: unknown): number {
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return Math.round(n * 100) / 100;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
