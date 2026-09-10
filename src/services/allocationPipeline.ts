@@ -3,16 +3,14 @@
  *
  * processPayment runs before create / patch / delete:
  *   - strip managed fields (MANAGED_PAYMENT_FIELDS from src/constants.ts)
- *   - on PATCH: merge partial body with existing record
  *   - normalize payload (empty strings, __none__)
- *   - apply receipt-type rules (TDS, etc.)
+ *   - on PATCH: merge partial body with existing record
+ *   - apply receipt-type rules (TDS forces amount_paid to 0)
  *   - on create: enforce org scope on query
  *   - on delete: enforce org scope, then check canDeletePayment
  *
- * TODO:
- *   - canDeletePayment: block delete when payment is synced (see README)
- *   - validateAllocationTotal: ensure allocation rows sum to payment amount
- *   - processPayment: call hooks in an order that makes PATCH and TDS tests pass
+ * canDeletePayment blocks deletion when sync_status is 'success'.
+ * validateAllocationTotal uses moneyEquals for cent-precision float-safe comparison.
  */
 
 import { normalizePayload } from '../hooks/normalizePayload';

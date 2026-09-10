@@ -1,8 +1,8 @@
 /**
  * Clean up incoming payment fields before save.
  *
- * TODO — for each field in NULLABLE_FIELDS, if the value is '', set it to null.
- * TODO — for each field in SENTINEL_FIELDS, if the value is '__none__', set it to null.
+ * For each field in NULLABLE_FIELDS: if the value is '', sets it to null.
+ * For each field in SENTINEL_FIELDS: if the value is '__none__', sets it to null.
  */
 
 const NULLABLE_FIELDS = ['payment_mode', 'bank_account_id'] as const;

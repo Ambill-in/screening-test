@@ -1,8 +1,8 @@
 /**
  * Business rules that depend on receipt_type.
  *
- * TODO: implement TDS handling per README (Background: billing rules).
- * Use isTdsReceipt() from ../lib/receiptType.
+ * If the receipt is TDS, forces amount_paid to 0.
+ * Uses isTdsReceipt() from ../lib/receiptType.
  */
 
 import { isTdsReceipt } from '../lib/receiptType';
