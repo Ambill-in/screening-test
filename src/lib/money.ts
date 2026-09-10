@@ -1,10 +1,9 @@
 /**
  * Round and compare currency at 2 decimal places (paisa precision).
  *
- * TODO:
- * - toMoney: parse input, return a number rounded to 2 decimals (invalid → 0)
- * - moneyEquals: true when amounts match at cent precision
- * - moneyGreaterThan: true when first amount is strictly greater at cent precision
+ * - toMoney: parses input and returns a number rounded to 2 decimals (invalid → 0)
+ * - moneyEquals: compares amounts at cent precision using integer math
+ * - moneyGreaterThan: checks if first amount is strictly greater at cent precision
  */
 
 export function toMoney(value: unknown): number {
@@ -12,13 +11,13 @@ export function toMoney(value: unknown): number {
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return toMoney(a) === toMoney(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toMoney(a) > toMoney(b);
 }
