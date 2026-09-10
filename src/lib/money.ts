@@ -15,9 +15,9 @@ export function toMoney(value: unknown): number {
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return Math.round(a * 100) === Math.round(b * 100);
+  return toMoney(a) === toMoney(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return Math.round(a * 100) > Math.round(b * 100);
+  return toMoney(a) > toMoney(b);
 }
