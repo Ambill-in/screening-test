@@ -14,5 +14,18 @@ export function normalizePayload(
 ): Record<string, unknown> {
   const result = { ...data };
 
+  // Convert empty strings to null on nullable fields
+  for (const field of NULLABLE_FIELDS) {
+    if (result[field] === '') {
+      result[field] = null;
+    }
+  }
+
+  for (const field of SENTINEL_FIELDS) {
+    if (result[field] === NONE_SENTINEL) {
+      result[field] = null;
+    }
+  }
+
   return result;
 }

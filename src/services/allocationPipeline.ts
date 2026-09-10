@@ -18,7 +18,9 @@
 import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { moneyEquals } from '../lib/money';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
@@ -33,13 +35,15 @@ export function validateAllocationTotal(
   allocations: AllocationRow[]
 ): void {
   const total = allocations.reduce((sum, row) => sum + row.amount, 0);
-  if (total !== paymentAmount) {
+  // Use moneyEquals to handle floating point precision
+  if (!moneyEquals(total, paymentAmount)) {
     throw new Error('Allocation total must equal payment amount');
   }
 }
 
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  // Can only delete if sync_status is NOT 'success'
+  return payment.sync_status !== 'success';
 }
 
 export function processPayment(context: PipelineContext): PaymentRecord {
@@ -56,17 +60,23 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     return existing;
   }
 
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    // PATCH flow: enforce scope → merge → apply rules → strip
+    enforceOrgScope(user, query);
+    let payload = mergePatch(existing, data as Partial<PaymentRecord>);
+    payload = applyReceiptTypeRules(payload);
+    payload = stripManagedFields(payload, MANAGED_FIELDS) as PaymentRecord;
+    return payload;
   }
 
+  // CREATE flow: normalize → enforce scope → apply rules → strip
+  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
   enforceOrgScope(user, query);
+  payload = applyReceiptTypeRules(payload as PaymentRecord) as Partial<PaymentRecord>;
+  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
 
   return payload as PaymentRecord;
 }
