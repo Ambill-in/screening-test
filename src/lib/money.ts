@@ -12,13 +12,13 @@ export function toMoney(value: unknown): number {
   if (!Number.isFinite(n)) {
     return 0;
   }
-  return n;
+  return Number(n.toFixed(2));
 }
 
 export function moneyEquals(a: number, b: number): boolean {
-  return a === b;
+  return toMoney(a) === toMoney(b);
 }
 
 export function moneyGreaterThan(a: number, b: number): boolean {
-  return a > b;
+  return toMoney(a) > toMoney(b);
 }
