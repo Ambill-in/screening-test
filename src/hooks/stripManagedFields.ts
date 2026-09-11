@@ -12,5 +12,10 @@ export function stripManagedFields<T extends object>(
   data: T | T[],
   fields: string[]
 ): T | T[] {
-  return data;
+  const manageFields = new Set(fields);
+  const stripfield = (record : T): T =>
+    Object.fromEntries(
+      Object.entries(record).filter(([key]) => !manageFields.has(key))
+    ) as T;
+return Array.isArray(data) ? data.map(stripfield) : stripfield(data);
 }
