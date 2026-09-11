@@ -6,4 +6,4 @@
  */
 export const MANAGED_PAYMENT_FIELDS = ['public_key', 'payment_seq'] as const;
 
-export type ManagedPaymentField = (typeof MANAGED_PAYMENT_FIELDS)[number];
+export type ManagedPaymentField = (typeof MANAGED_PAYMENT_FIELDS)[number];``
