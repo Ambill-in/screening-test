@@ -59,9 +59,9 @@ export function processPayment(context: PipelineContext): PaymentRecord {
   }
 
   let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  console.log('AFTER NORMALIZE:', payload);
+
   payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-  console.log('AFTER STRIP:', payload);
+
 
   if (method === 'patch') {
     if (!existing) {
