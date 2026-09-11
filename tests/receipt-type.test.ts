@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { applyReceiptTypeRules } from '../src/hooks/applyReceiptTypeRules';
 import { processPayment } from '../src/services/allocationPipeline';
 import { PaymentRecord, PipelineContext, UserContext } from '../src/types';
+const NULLABLE_FIELDS = [
+  'payment_mode',
+  'bank_account_id',
+];
 
 const orgUser: UserContext = {
   id: 'u1',
