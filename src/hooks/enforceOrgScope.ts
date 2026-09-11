@@ -20,4 +20,7 @@ export function enforceOrgScope(
   if (query.organization_id == null || query.organization_id === '') {
     throw new Error('Organization ID is required');
   }
+  if (query.organization_id !== user.organization_id) {
+    throw new Error('Unauthorized Access');
+  }
 }
