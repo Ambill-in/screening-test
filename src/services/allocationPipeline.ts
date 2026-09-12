@@ -19,15 +19,14 @@ import { normalizePayload } from '../hooks/normalizePayload';
 import { stripManagedFields } from '../hooks/stripManagedFields';
 import { mergePatch } from '../hooks/mergePatch';
 import { enforceOrgScope } from '../hooks/enforceOrgScope';
+import { applyReceiptTypeRules } from '../hooks/applyReceiptTypeRules';
 import { MANAGED_PAYMENT_FIELDS } from '../constants';
 import {
   AllocationRow,
   PaymentRecord,
   PipelineContext,
 } from '../types';
-
 const MANAGED_FIELDS = [...MANAGED_PAYMENT_FIELDS];
-
 export function validateAllocationTotal(
   paymentAmount: number,
   allocations: AllocationRow[]
@@ -37,14 +36,11 @@ export function validateAllocationTotal(
     throw new Error('Allocation total must equal payment amount');
   }
 }
-
 export function canDeletePayment(payment: PaymentRecord): boolean {
-  return true;
+  return payment.sync_status !== 'success';
 }
-
 export function processPayment(context: PipelineContext): PaymentRecord {
   const { method, data, existing, user, query } = context;
-
   if (method === 'remove') {
     enforceOrgScope(user, query);
     if (!existing) {
@@ -55,22 +51,23 @@ export function processPayment(context: PipelineContext): PaymentRecord {
     }
     return existing;
   }
-
-  let payload = normalizePayload(data as Record<string, unknown>) as Partial<PaymentRecord>;
-  payload = stripManagedFields(payload, MANAGED_FIELDS) as Partial<PaymentRecord>;
-
+  let payload = normalizePayload(
+    data as Record<string, unknown>
+  ) as Partial<PaymentRecord>;
+  payload = stripManagedFields(
+    payload,
+    MANAGED_FIELDS
+  ) as Partial<PaymentRecord>;
   if (method === 'patch') {
     if (!existing) {
       throw new Error('Payment not found');
     }
-    return mergePatch(existing, payload);
+    const merged = mergePatch(existing, payload);
+    return applyReceiptTypeRules(merged);
   }
-
   enforceOrgScope(user, query);
-
-  return payload as PaymentRecord;
+  return applyReceiptTypeRules(payload as PaymentRecord);
 }
-
 export function processAllocations(
   paymentAmount: number,
   allocations: AllocationRow[]
@@ -78,7 +75,6 @@ export function processAllocations(
   if (!allocations.length) {
     throw new Error('At least one allocation is required');
   }
-
   const seen = new Set<string>();
   for (const row of allocations) {
     if (seen.has(row.invoice_id)) {
@@ -89,7 +85,6 @@ export function processAllocations(
       throw new Error('Allocation amount cannot be negative');
     }
   }
-
   validateAllocationTotal(paymentAmount, allocations);
   return allocations;
 }
